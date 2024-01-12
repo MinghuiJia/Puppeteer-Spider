@@ -1,34 +1,31 @@
-/*
- * @Author: jiaminghui
- * @Date: 2024-01-07 16:23:03
- * @LastEditTime: 2024-01-07 22:35:27
- * @LastEditors: jiaminghui
- * @FilePath: \spider\src\mongo\mongodb.ts
- * @Description: 
- */
 import { MongoClient } from "mongodb";
-// const { MongoClient } = require("mongodb");
-// Connection URL
+
+// 设置mongodb相关的配置信息
 const username = 'root'; // 用户名
 const password = '123456'; // 密码
 const url = `mongodb://${username}:${password}@localhost:27017`;
+
+// 创建mongodb客户端对象
 const client = new MongoClient(url);
-// Database Name
+// 设置数据库的名称和集合名称，插入过程中如果不存在会自动创建
 const dbName = "test";
 const collectionName = "book";
+
 /**
- *添加数据到数据库
- * @param { Array} data
+ * @description 添加数据到数据库
+ * @param { Array } data
  * @returns string
  */
 const insertMany = async (data) => {
-  // Use connect method to connect to the server
   try {
+    // Use connect method to connect to the server
     await client.connect();
     const db = client.db(dbName);
     const collection = db.collection(collectionName);
+
     await collection.insertMany(data);
     client.close();
+
     return "ok";
   } catch (error) {
     return error;
@@ -36,52 +33,60 @@ const insertMany = async (data) => {
   
 };
 /**
- *添加数据到数据库
- * @param { Array} data
+ * @description 添加数据到数据库
+ * @param { object } data
  * @returns string
  */
  const insertOne = async (data) => {
   try {
-    // Use connect method to connect to the server
     await client.connect();
     const db = client.db(dbName);
     const collection = db.collection(collectionName);
+
     await collection.insertOne(data);
     client.close();
+
     return "ok";
   } catch (error) {
     return error;
   }
 };
 /**
- * 清空数据库
+ * @description 清空数据库
  */
 const deleteMany = async () => {
-  await client.connect();
-  const db = client.db(dbName);
-  const collection = db.collection(collectionName);
-  await collection.deleteMany();
-  client.close();
-  return "done.";
+  try {
+    await client.connect();
+    const db = client.db(dbName);
+    const collection = db.collection(collectionName);
+
+    await collection.deleteMany();
+    client.close();
+
+    return "ok";
+  } catch (error) {
+    return error;
+  }
 };
 /**
- * 获取数据集
+ * @description 获取数据集
  * @returns array
  */
 const getData = async () => {
-  await client.connect();
-  const db = client.db(dbName);
-  const collection = db.collection(collectionName);
-  const array = await collection.find().toArray();
-  client.close();
-  return array;
+  try {
+    await client.connect();
+    const db = client.db(dbName);
+    const collection = db.collection(collectionName);
+
+    const array = await collection.find().toArray();
+    client.close();
+
+    return array;
+  } catch (error) {
+    return error;
+  }
 };
-//把方法暴露出去
-// module.exports = {
-//   insertMany,
-//   getData,
-//   deleteMany,
-// }
+
 export {
   insertMany,
   insertOne,

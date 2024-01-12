@@ -2,11 +2,22 @@ import { Spider } from "./spider";
 import { Page } from "puppeteer";
 import { insertOne, insertMany } from "./mongo/mongodb";
 
-// declare const aaa:any;
-
 export class MyZhihuSpider extends Spider {
+  protected keyword: string;
+  protected url: string;
+
   constructor(browser) {
     super(browser);
+  }
+
+  /**
+   * @description 初始化对象的变量
+   * @param url 解析页面的url
+   * @param keyword 获取页面url所用到的关键词
+   */
+  private init(url:string, keyword: string): void {
+    this.url = url;
+    this.keyword = keyword;
   }
   /**
    * @description 实现请求事件的处理逻辑
@@ -26,12 +37,20 @@ export class MyZhihuSpider extends Spider {
   setResponseEventListener(page: Page): Promise<never> {
     // 记住这里是观察者模式，有响应，这个方法就被执行
     page.on("response", async (res) => {
+      // res.url()会返回响应对应的API
+      // 通过正则匹配获取相关API返回的数据
       if (/https:\/\/www.zhihu.com\/api\/v4\/questions\/\d+\/feeds/.test(res.url())) {
+        // 获取响应返回的json数据
         const { data } = await res.json();
-        // 这里面存的是[],所以只能用insertMany,查看一下形式是什么,然后决定
+
+        // 对返回的数据数组逐个处理
         const withIdData = data.map((item) => {
+          // 设置数据主键
           const id = item["target"]["id"];
           item["_id"] = id;
+
+          // 数据添加关键词
+          item["keyword"] = this.keyword;
 
           // // 需要给根据id去访问一下，获取带有ip的发布时间
           // const timeWithIP = page.evaluate((id) => {
@@ -44,23 +63,31 @@ export class MyZhihuSpider extends Spider {
           return item;
         });
 
+        // 数据存入数据库
         const opRes = await insertMany(withIdData);
+
+        // 插入失败输出错误原因
         if (opRes !== "ok") console.log(opRes);
 
       } else if (/https:\/\/www.zhihu.com\/api\/v4\/members/.test(res.url())) {
+        // 获取作者相关信息
         const authorInfos = await res.json();
+        // 作者可能账号会注销，所以需要判断有没有error字段
         if (!authorInfos["error"]) {
           console.log(authorInfos["name"]);
         }
-
+        
       }
     });
     //@ts-ignore
     return;
   }
-  private getFirstScreenData(): any {
-    // // ts-ignore
-    // aaa
+
+  /**
+   * @description 页面首屏解析
+   * @returns 解析后组织好的数据对象
+   */
+  private getFirstScreenData(keyword: string): any {
     const firstAnswers = document.querySelectorAll(".List-item");
     const questionName = document.querySelector(".QuestionHeader-title").textContent;
     const firstAnswersData = Array.prototype.map.call(firstAnswers, (item) => {
@@ -95,7 +122,7 @@ export class MyZhihuSpider extends Spider {
         answer_comment_count: commentCount,
         answer_content: content,
         answer_post_time_ip: answeredTimeText,
-        keyword: "中国 碳中和",
+        keyword: keyword,
       };
       return spiderObj;
     });
@@ -104,27 +131,57 @@ export class MyZhihuSpider extends Spider {
   /**
    * @description 这个地方只负责拿数据，拿到的数据其他函数会自动存入数据库中
    * */
-  public async asyncGatherTask(): Promise<void> {
+  public async asyncGatherTask(url: string, keyword: string): Promise<void> {
     try {
+      // 创建浏览器实例中的一个标签页-tab
       const page = await this.browser.newPage();
+
+      // 将解析的url和keyword添加到对象的属性中
+      this.init(url, keyword);
+
+      // 为页面添加基本事件监听（最主要的是开启对请求的API的拦截）
       await this.addCommonListenerEvent(page);
+
+      // 对请求事件进行监听处理（可以对请求时携带的参数进行处理，优化请求效率）
       await this.setRequestEventListener(page);
+
+      // 对响应事件进行监听处理（获取响应时的数据）
       await this.setResponseEventListener(page);
-      // "https://www.zhihu.com/question/422765767"
-      await page.goto("https://www.zhihu.com/question/537806300", {
+
+      // 通过goto创建Page
+      await page.goto(url, {
         // waitUntil是goto方法的一个选项，用于指定浏览器应该等待什么条件完成后再继续执行
-        // 等待至少500毫秒，直到只有不超过2个网络连接为止。
+        // 等待至少500毫秒，直到只有不超过2个网络连接为止，从而优化爬虫速度
         waitUntil: "networkidle2",
       });
+
+      // 通过evaluate来首先对初始化时的页面进行解析（因为页面使用SSR渲染，一开始渲染的data通过API拦截抓取不到）
       // evaluate里面的方法会注入到浏览器的console执行，reture得到的结果是promise，解析之后可以在项目中获得
-      const res = await page.evaluate(this.getFirstScreenData);
+      // evaluate注入到浏览器console中，如果代码中没有对应变量：1. ts-ignore方法 2. 顶部声明 declare const aaa:string;
+      const res = await page.evaluate(this.getFirstScreenData, keyword);
+
+      // 首屏加载解析后的数据存储到数据库
       const opRes = await insertMany(res);
+
+      // 如果数据插入失败，输出错误的原因
       if (opRes !== "ok") console.log(opRes);
+
+      // 模拟浏览操作，循环滚动滚动条，触发API请求渲染页面的数据
       // eslint-disable-next-line no-constant-condition
+      let scrollCount = 0;
       while (true) {
         await page.mouse.wheel({ deltaY: 800 });
-        // await page.mouse.wheel({ deltaY: -10 });
         await this.clock(2);
+
+        // 没滚动100次，就向上滚动一次，防止随着数量越来越多，由于移动的距离变大，导致后面加载不出新的数据
+        scrollCount += 1;
+        if (scrollCount > 100) {
+          scrollCount = 0;
+          await page.mouse.wheel({ deltaY: -50 });
+          await this.clock(2);
+        }
+
+        // 解析页面中出现指定元素来终止滚动
         const flag = await page.evaluate(() => {
           const writeAnswerButton = document.querySelector('.QuestionAnswers-answerButton');
           if (!writeAnswerButton) {
@@ -136,6 +193,7 @@ export class MyZhihuSpider extends Spider {
         if (flag) break;
       }
 
+      console.log("当前页:"+url+"爬取完毕");
       // 爬完了数据关闭当前页面
       await page.close();
     } catch (e) {

@@ -1,5 +1,5 @@
 {
-  "name": "weibo_distributed_spider",
+  "name": "puppeteer_spider",
   "version": "1.1.1",
   "description": "微博分布式爬虫",
   "main": "src/main.js",
@@ -7,10 +7,11 @@
     "run": "ts-node ./src/main.ts"
   },
   "keywords": [
-    "微博",
-    "分布式爬虫"
+    "知乎",
+    "quora",
+    "puppeteer"
   ],
-  "author": "luneice",
+  "author": "jiadobe",
   "license": "ISC",
   "dependencies": {
     "express": "^4.18.2",
