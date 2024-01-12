@@ -1,0 +1,86 @@
+{
+    "root": true,
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+      "@typescript-eslint",
+      "import"
+    ],
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:@typescript-eslint/recommended"
+    ],
+    "overrides": [
+      {
+        "files": [
+          "*.ts",
+          "*.tsx"
+        ],
+        "rules": {
+          "@typescript-eslint/no-unused-vars": [
+            0,
+            {
+              "args": "none"
+            }
+          ],
+          "@typescript-eslint/no-explicit-any": [
+            0,
+            {
+              "args": "none"
+            }
+          ],
+          "no-unused-expressions": "off",
+          "@typescript-eslint/ban-ts-comment":"off",
+          "@typescript-eslint/no-unused-expressions": 2,
+          "import/no-extraneous-dependencies": 0,
+          "@typescript-eslint/no-namespace": "off",
+          // 语句强制分号结尾
+          "semi": [2, "always"],
+          // 分号前后空格
+          "semi-spacing": [0, {"before": false, "after": true}]
+        }
+      }
+    ],
+    "rules": {
+      "import/extensions": 0,
+      "import/no-cycle": 0,
+      "import/no-extraneous-dependencies": [
+        "error",
+        {
+          "devDependencies": [
+            "src/**"
+          ]
+        }
+      ],
+      "comma-dangle": [
+        "error",
+        "always-multiline"
+      ],
+      "consistent-return": 0,
+      "no-param-reassign": 0,
+      "no-underscore-dangle": 0,
+      // for (let i = 0; i < len; i++)
+      "no-plusplus": 0,
+      // https://eslint.org/docs/rules/no-continue
+      // labeledLoop is conflicted with `eslint . --fix`
+      "no-continue": 0,
+      // ban this for Number.isNaN needs polyfill
+      "no-restricted-globals": 0,
+      "max-classes-per-file": 0,
+      // https://github.com/typescript-eslint/typescript-eslint/issues/2540#issuecomment-692866111
+      "no-use-before-define": 0,
+      "@typescript-eslint/no-use-before-define": 2,
+      "no-shadow": 0,
+      "@typescript-eslint/no-shadow": [
+        2,
+        {
+          "ignoreTypeValueShadow": true
+        }
+      ],
+      // https://github.com/typescript-eslint/typescript-eslint/issues/2528#issuecomment-689369395
+      "no-undef": 0
+    },
+    "globals": {
+      "gtag": true
+    }
+  }

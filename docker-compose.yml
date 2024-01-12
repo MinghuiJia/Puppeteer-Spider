@@ -1,0 +1,21 @@
+version: '3.8'
+services:
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    restart: always
+    networks:
+      - my-network
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
+    ports:
+      - "27017:27017"
+    volumes:
+      - ${MONGODB_VOLUME}:/data/db
+      - ${MONGODB_VOLUME}:/data/configdb
+
+# 容器内容器外一致可以通信
+networks:
+  my-network:
+    driver: bridge
