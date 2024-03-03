@@ -9,19 +9,41 @@ const url = `mongodb://${username}:${password}@localhost:27017`;
 const client = new MongoClient(url);
 // 设置数据库的名称和集合名称，插入过程中如果不存在会自动创建
 const dbName = "test";
-const collectionName = "book";
+const collectionName1 = "answers";
+const collectionName2 = "comments";
 
 /**
  * @description 添加数据到数据库
  * @param { Array } data
  * @returns string
  */
-const insertMany = async (data) => {
+const insertMany_answers = async (data) => {
   try {
     // Use connect method to connect to the server
     await client.connect();
     const db = client.db(dbName);
-    const collection = db.collection(collectionName);
+    const collection = db.collection(collectionName1);
+
+    await collection.insertMany(data);
+    client.close();
+
+    return "ok";
+  } catch (error) {
+    return error;
+  }
+  
+};
+/**
+ * @description 添加数据到数据库
+ * @param { Array } data
+ * @returns string
+ */
+const insertMany_comments = async (data) => {
+  try {
+    // Use connect method to connect to the server
+    await client.connect();
+    const db = client.db(dbName);
+    const collection = db.collection(collectionName2);
 
     await collection.insertMany(data);
     client.close();
@@ -41,7 +63,7 @@ const insertMany = async (data) => {
   try {
     await client.connect();
     const db = client.db(dbName);
-    const collection = db.collection(collectionName);
+    const collection = db.collection(collectionName1);
 
     await collection.insertOne(data);
     client.close();
@@ -58,7 +80,7 @@ const deleteMany = async () => {
   try {
     await client.connect();
     const db = client.db(dbName);
-    const collection = db.collection(collectionName);
+    const collection = db.collection(collectionName1);
 
     await collection.deleteMany();
     client.close();
@@ -76,7 +98,7 @@ const getData = async () => {
   try {
     await client.connect();
     const db = client.db(dbName);
-    const collection = db.collection(collectionName);
+    const collection = db.collection(collectionName1);
 
     const array = await collection.find().toArray();
     client.close();
@@ -88,7 +110,8 @@ const getData = async () => {
 };
 
 export {
-  insertMany,
+  insertMany_answers,
+  insertMany_comments,
   insertOne,
   getData,
   deleteMany,

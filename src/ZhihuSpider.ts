@@ -1,6 +1,6 @@
 import { Spider } from "./spider";
 import { Page } from "puppeteer";
-import { insertOne, insertMany } from "./mongo/mongodb";
+import { insertOne, insertMany_answers, insertMany_comments } from "./mongo/mongodb";
 
 export class MyZhihuSpider extends Spider {
   protected keyword: string;
@@ -64,20 +64,44 @@ export class MyZhihuSpider extends Spider {
         });
 
         // 数据存入数据库
-        const opRes = await insertMany(withIdData);
+        const opRes = await insertMany_answers(withIdData);
 
         // 插入失败输出错误原因
         if (opRes !== "ok") console.log(opRes);
 
-      } else if (/https:\/\/www.zhihu.com\/api\/v4\/members/.test(res.url())) {
-        // 获取作者相关信息
-        const authorInfos = await res.json();
-        // 作者可能账号会注销，所以需要判断有没有error字段
-        if (!authorInfos["error"]) {
-          console.log(authorInfos["name"]);
-        }
+      } else if (/https:\/\/www.zhihu.com\/api\/v4\/comment_v5\/answers\/\d+\/root_comment/.test(res.url())) {
+        const regex = /https:\/\/www.zhihu.com\/api\/v4\/comment_v5\/answers\/(\d+)\/root_comment/;
+        const result = res.url().match(regex);
+        // 第一个元素(result[0])是完整匹配的字符串
+        console.log(result[1]);  // "123456"，匹配的id就是对应回答的帖子
         
-      }
+        const { data } = await res.json();
+        // 这是一个数组
+        const withIdData = data.map((item) => {
+          // 设置主键
+          const id = item["id"];
+          item["_id"] = {
+            answer_id: parseInt(result[1]),
+            comment_id: id,
+          };
+          return item;
+        });
+        
+        // 将评论数据插入数据库
+        const opRes = await insertMany_comments(withIdData);
+
+        // 插入失败输出错误原因
+        if (opRes !== "ok") console.log(opRes);
+      } 
+      // else if (/https:\/\/www.zhihu.com\/api\/v4\/members/.test(res.url())) {
+      //   // 获取作者相关信息
+      //   const authorInfos = await res.json();
+      //   // 作者可能账号会注销，所以需要判断有没有error字段
+      //   if (!authorInfos["error"]) {
+      //     console.log(authorInfos["name"]);
+      //   }
+        
+      // }
     });
     //@ts-ignore
     return;
@@ -128,6 +152,34 @@ export class MyZhihuSpider extends Spider {
     });
     return firstAnswersData;
   }
+
+  /**
+   * @description 当前页面将有评论的部分点开
+   * @returns 解析后点击评论，展示评论内容，出发请求监听
+   */
+  private getFirstCommentButton(): any {
+    // this.clock(2);
+    // 把当前页面的评论点击一遍
+    const allClickEles = document.querySelectorAll(".ContentItem .RichContent .ContentItem-actions");
+    const allDivsEles = document.querySelectorAll(".List-item");
+    for (let i = 0; i < allDivsEles.length; i++) {
+      const each = allClickEles[i];
+      const div = allDivsEles[i];
+      const buttons = each.querySelectorAll("button");
+      const commentButton = buttons[2];
+      if (commentButton.textContent != "添加评论" && commentButton.textContent != "收起评论" && commentButton.textContent.indexOf("评论")) {
+        div.scrollIntoView(false);
+        // this.clock(1);
+
+        commentButton.click();
+        
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   /**
    * @description 这个地方只负责拿数据，拿到的数据其他函数会自动存入数据库中
    * */
@@ -161,7 +213,7 @@ export class MyZhihuSpider extends Spider {
       const res = await page.evaluate(this.getFirstScreenData, keyword);
 
       // 首屏加载解析后的数据存储到数据库
-      const opRes = await insertMany(res);
+      const opRes = await insertMany_answers(res);
 
       // 如果数据插入失败，输出错误的原因
       if (opRes !== "ok") console.log(opRes);
@@ -191,6 +243,26 @@ export class MyZhihuSpider extends Spider {
           return true;
         })
         if (flag) break;
+      }
+
+      // 收集评论信息
+      while(true) {
+        await this.clock(2);
+
+        const res = await page.evaluate(this.getFirstCommentButton);
+
+        // const eles = this.getFirstCommentButton();
+        if (!res) {
+          break;
+        }
+        // if (eles[0]) {
+        //   eles[1].scrollIntoView(false);
+        //   await this.clock(1);
+        //   const eles2 = this.getFirstCommentButton();
+        //   eles2[0].click();
+        // } else {
+        //   break;
+        // }
       }
 
       console.log("当前页:"+url+"爬取完毕");

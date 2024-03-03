@@ -12,14 +12,16 @@ import { connect } from "puppeteer";
   const taskSpider = new MyZhihuSpider(browser);
 
   const urls = [
-    "https://www.zhihu.com/question/422765767",
-    "https://www.zhihu.com/question/537806300",
+    // 'https://www.zhihu.com/question/537806300',
+    'https://www.zhihu.com/question/645685254',
+    'https://www.zhihu.com/question/425575218',
+    'https://www.zhihu.com/question/428672140'
   ]
 
   for (const url of urls) {
     // 执行爬虫任务
     console.log("processing " + url + " ...");
-    await taskSpider.asyncGatherTask(url, "中国 碳中和");
+    await taskSpider.asyncGatherTask(url, "退休");
   }
   // forEach不会等待每个迭代中的异步操作完成，而是会立即执行下一个迭代
   // forEach源码中，有一个while循环一直在调用callback回调函数，我们只是在将foreach中的callback使用了async/await来等待异步返回操作，而本身这个foreach并没有使用async/await来等待异步返回
