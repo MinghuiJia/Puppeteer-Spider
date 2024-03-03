@@ -64,10 +64,13 @@ export class MyZhihuSpider extends Spider {
         });
 
         // 数据存入数据库
-        const opRes = await insertMany_answers(withIdData);
+        if (Object.keys(withIdData).length !== 0) {
+          const opRes = await insertMany_answers(withIdData);
 
-        // 插入失败输出错误原因
-        if (opRes !== "ok") console.log(opRes);
+          // 插入失败输出错误原因
+          if (opRes !== "ok") console.log(opRes);
+        }
+        
 
       } else if (/https:\/\/www.zhihu.com\/api\/v4\/comment_v5\/answers\/\d+\/root_comment/.test(res.url())) {
         const regex = /https:\/\/www.zhihu.com\/api\/v4\/comment_v5\/answers\/(\d+)\/root_comment/;
@@ -87,11 +90,13 @@ export class MyZhihuSpider extends Spider {
           return item;
         });
         
-        // 将评论数据插入数据库
-        const opRes = await insertMany_comments(withIdData);
+        if (Object.keys(withIdData).length !== 0) {
+          // 将评论数据插入数据库
+          const opRes = await insertMany_comments(withIdData);
 
-        // 插入失败输出错误原因
-        if (opRes !== "ok") console.log(opRes);
+          // 插入失败输出错误原因
+          if (opRes !== "ok") console.log(opRes);
+        }
       } 
       // else if (/https:\/\/www.zhihu.com\/api\/v4\/members/.test(res.url())) {
       //   // 获取作者相关信息
@@ -213,10 +218,13 @@ export class MyZhihuSpider extends Spider {
       const res = await page.evaluate(this.getFirstScreenData, keyword);
 
       // 首屏加载解析后的数据存储到数据库
-      const opRes = await insertMany_answers(res);
+      if (Object.keys(res).length !== 0) {
+        const opRes = await insertMany_answers(res);
 
-      // 如果数据插入失败，输出错误的原因
-      if (opRes !== "ok") console.log(opRes);
+        // 如果数据插入失败，输出错误的原因
+        if (opRes !== "ok") console.log(opRes);
+      }
+      
 
       // 模拟浏览操作，循环滚动滚动条，触发API请求渲染页面的数据
       // eslint-disable-next-line no-constant-condition
