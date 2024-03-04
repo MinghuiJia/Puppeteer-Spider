@@ -172,7 +172,7 @@ export class MyZhihuSpider extends Spider {
       const div = allDivsEles[i];
       const buttons = each.querySelectorAll("button");
       const commentButton = buttons[2];
-      if (commentButton.textContent != "添加评论" && commentButton.textContent != "收起评论" && commentButton.textContent.indexOf("评论")) {
+      if (/\d/.test(commentButton.textContent)) {
         div.scrollIntoView(false);
         // this.clock(1);
 
@@ -230,6 +230,19 @@ export class MyZhihuSpider extends Spider {
       // eslint-disable-next-line no-constant-condition
       let scrollCount = 0;
       while (true) {
+        // 收集评论信息
+        while(true) {
+          await this.clock(2);
+
+          const res = await page.evaluate(this.getFirstCommentButton);
+
+          if (!res) {
+            // 结束了，当前没有可以点击的评论了，可能会导致页面在最底部，无法刷新
+            await page.mouse.wheel({ deltaY: -100 });
+            break;
+          }
+        }
+
         await page.mouse.wheel({ deltaY: 800 });
         await this.clock(2);
 
@@ -253,25 +266,17 @@ export class MyZhihuSpider extends Spider {
         if (flag) break;
       }
 
-      // 收集评论信息
-      while(true) {
-        await this.clock(2);
+      // // 收集评论信息
+      // while(true) {
+      //   await this.clock(2);
 
-        const res = await page.evaluate(this.getFirstCommentButton);
+      //   const res = await page.evaluate(this.getFirstCommentButton);
 
-        // const eles = this.getFirstCommentButton();
-        if (!res) {
-          break;
-        }
-        // if (eles[0]) {
-        //   eles[1].scrollIntoView(false);
-        //   await this.clock(1);
-        //   const eles2 = this.getFirstCommentButton();
-        //   eles2[0].click();
-        // } else {
-        //   break;
-        // }
-      }
+      //   // const eles = this.getFirstCommentButton();
+      //   if (!res) {
+      //     break;
+      //   }
+      // }
 
       console.log("当前页:"+url+"爬取完毕");
       // 爬完了数据关闭当前页面
