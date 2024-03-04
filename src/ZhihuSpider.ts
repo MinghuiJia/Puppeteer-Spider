@@ -1,6 +1,6 @@
 import { Spider } from "./spider";
 import { Page } from "puppeteer";
-import { insertOne, insertMany_answers, insertMany_comments } from "./mongo/mongodb";
+import { client, insertOne, insertMany_answers, insertMany_comments } from "./mongo/mongodb";
 
 export class MyZhihuSpider extends Spider {
   protected keyword: string;
@@ -66,6 +66,7 @@ export class MyZhihuSpider extends Spider {
         // 数据存入数据库
         if (Object.keys(withIdData).length !== 0) {
           const opRes = await insertMany_answers(withIdData);
+          await client.close();
 
           // 插入失败输出错误原因
           if (opRes !== "ok") console.log(opRes);
@@ -93,6 +94,7 @@ export class MyZhihuSpider extends Spider {
         if (Object.keys(withIdData).length !== 0) {
           // 将评论数据插入数据库
           const opRes = await insertMany_comments(withIdData);
+          await client.close();
 
           // 插入失败输出错误原因
           if (opRes !== "ok") console.log(opRes);
@@ -170,9 +172,9 @@ export class MyZhihuSpider extends Spider {
     for (let i = 0; i < allDivsEles.length; i++) {
       const each = allClickEles[i];
       const div = allDivsEles[i];
-      const buttons = each.querySelectorAll("button");
-      const commentButton = buttons[2];
-      if (/\d/.test(commentButton.textContent)) {
+      const buttons = each && each.querySelectorAll("button");
+      const commentButton = buttons && buttons[2];
+      if (commentButton && /\d/.test(commentButton.textContent)) {
         div.scrollIntoView(false);
         // this.clock(1);
 
@@ -220,6 +222,7 @@ export class MyZhihuSpider extends Spider {
       // 首屏加载解析后的数据存储到数据库
       if (Object.keys(res).length !== 0) {
         const opRes = await insertMany_answers(res);
+        await client.close();
 
         // 如果数据插入失败，输出错误的原因
         if (opRes !== "ok") console.log(opRes);
@@ -231,6 +234,7 @@ export class MyZhihuSpider extends Spider {
       let scrollCount = 0;
       while (true) {
         // 收集评论信息
+        // 当前这里由于没有点击查看全部xxx条回复，所以内容不全，后续有时间应该补充一下
         while(true) {
           await this.clock(2);
 

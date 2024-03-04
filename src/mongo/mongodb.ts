@@ -25,7 +25,7 @@ const insertMany_answers = async (data) => {
     const collection = db.collection(collectionName1);
 
     await collection.insertMany(data);
-    client.close();
+    // await client.close();
 
     return "ok";
   } catch (error) {
@@ -46,7 +46,7 @@ const insertMany_comments = async (data) => {
     const collection = db.collection(collectionName2);
 
     await collection.insertMany(data);
-    client.close();
+    // await client.close();
 
     return "ok";
   } catch (error) {
@@ -66,7 +66,7 @@ const insertMany_comments = async (data) => {
     const collection = db.collection(collectionName1);
 
     await collection.insertOne(data);
-    client.close();
+    // await client.close();
 
     return "ok";
   } catch (error) {
@@ -83,7 +83,7 @@ const deleteMany = async () => {
     const collection = db.collection(collectionName1);
 
     await collection.deleteMany();
-    client.close();
+    // await client.close();
 
     return "ok";
   } catch (error) {
@@ -101,7 +101,7 @@ const getData = async () => {
     const collection = db.collection(collectionName1);
 
     const array = await collection.find().toArray();
-    client.close();
+    // await client.close();
 
     return array;
   } catch (error) {
@@ -110,6 +110,7 @@ const getData = async () => {
 };
 
 export {
+  client,
   insertMany_answers,
   insertMany_comments,
   insertOne,
