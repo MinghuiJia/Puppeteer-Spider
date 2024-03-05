@@ -245,6 +245,11 @@ export class MyZhihuSpider extends Spider {
             await page.mouse.wheel({ deltaY: -100 });
             break;
           }
+
+          // 这里需要完善一下，假设点击评论后弹出的是评论框，那么就需要查找弹出框的取消按钮
+          // 如果存在某个id下元素存在，那么说明弹出了评论框
+          // 这个时候需要点击一下ESC，或者不用判断每次都直接点击Esc防止弹出
+          await page.keyboard.press('Escape');
         }
 
         await page.mouse.wheel({ deltaY: 800 });
